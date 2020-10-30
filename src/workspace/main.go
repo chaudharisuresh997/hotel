@@ -1,35 +1,51 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
+func (dao Dao) GetMySqlConnection() {
+	db, err := sql.Open("mysql", "newuser:newpassword@tcp(127.0.0.1:3306)/test_db")
 
+	// if there is an error opening the connection, handle it
+	if err != nil {
+		panic(err.Error())
+	}
+	dao.mc = db
+	return
+}
+
+type Dao struct {
+	mc *sql.DB
+}
+
+var dao Dao
 
 func init() {
-	Init()
+	dao.GetMySqlConnection()
 }
-func hotelHandler(w http.ResponseWriter, r *http.Request) {
+func stockHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	w.WriteHeader(http.StatusOK)
 	//fmt.Printf("entered %v", vars)
-	json.NewEncoder(w).Encode(GetRestaurant(vars["query"], vars["veg"]))
-	//fmt.Fprintf(w, "Category: %v\n", GetRestaurant(vars["query"], vars["veg"]))
-	//return )
+	json.NewEncoder(w).Encode(vars)
 
 }
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/search", hotelHandler).
+	//example 1: /search?query=sample?stock="infy"
+	r.HandleFunc("/search", stockHandler).
 		Queries(
 			"query", "{query}",
-			"veg", "{veg}",
+			"stock", "{stock}",
 		).
 		Methods("GET")
 	//	r.HandleFunc("/user", UserByValueHandler).Methods("GET")
